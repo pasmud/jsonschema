@@ -450,6 +450,47 @@ class TestCLI(TestCase):
             """,
         )
 
+    def test_instance_is_parsed_as_JSON_regardless_of_file_extension(self):
+        """
+        The CLI parses both schemas and instances with `json.load`, so a file
+        which is not JSON fails to parse even when named `.yaml` or `.yml`.
+
+        This is the behavior described in the FAQ, which points readers who
+        want to validate YAML or TOML at deserializing it themselves.
+        """
+        instance = "a: 1\n"
+
+        for name in ("some_instance.yaml", "some_instance.yml"):
+            with self.subTest(name=name):
+                self.assertOutputs(
+                    files=dict(some_schema="{}", **{name: instance}),
+                    argv=["-i", name, "some_schema"],
+
+                    exit_code=1,
+                    stderr=f"""\
+                        Failed to parse '{name}': {_message_for(instance)}
+                    """,
+                )
+
+    def test_schema_is_parsed_as_JSON_regardless_of_file_extension(self):
+        """
+        As with instances, schemas are parsed with `json.load` regardless of
+        the file name they are given.
+        """
+        schema = "a: 1\n"
+
+        for name in ("some_schema.yaml", "some_schema.yml"):
+            with self.subTest(name=name):
+                self.assertOutputs(
+                    files={name: schema},
+                    argv=[name],
+
+                    exit_code=1,
+                    stderr=f"""\
+                        Failed to parse '{name}': {_message_for(schema)}
+                    """,
+                )
+
     def test_instance_is_invalid_JSON_pretty_output(self):
         stdout, stderr = self.run_cli(
             files=dict(

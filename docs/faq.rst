@@ -73,19 +73,24 @@ Difficult as this may sound for new users, at this point it at least means they 
 Can jsonschema be used to validate YAML, TOML, etc.?
 ----------------------------------------------------
 
-Like most JSON Schema implementations, `jsonschema` doesn't actually deal directly with JSON at all (other than in relation to the :kw:`$ref` keyword, elaborated on below).
+Like most JSON Schema implementations, `jsonschema` doesn't actually deal directly with JSON at all (other than when it has to read JSON from somewhere itself, elaborated on below).
 
 In other words as far as this library is concerned, schemas and instances are simply runtime Python objects.
 The JSON object ``{}`` is simply the Python `dict` ``{}``, and a JSON Schema like ``{"type": "object", {"properties": {}}}`` is really an assertion about particular Python objects and their keys.
 
 .. note::
 
-   The :kw:`$ref` keyword is a single notable exception.
+   The :kw:`$ref` keyword is the most notable exception.
 
    Specifically, in the case where `jsonschema` is asked to resolve a remote reference, it has no choice but to assume that the remote reference is serialized as JSON, and to deserialize it using the `json` module.
 
    One cannot today therefore reference some remote piece of YAML and have it deserialized into Python objects by this library without doing some additional work.
    See `Resolving References to Schemas Written in YAML <referencing:Resolving References to Schemas Written in YAML>` for details.
+
+   Reading a schema or an instance from a file or from standard input is a second such case, as the deprecated `jsonschema` command line interface parses both of them with the `json` module.
+   It therefore fails on anything that is not valid JSON, even if the file is named with a ``.yaml`` or ``.yml`` extension.
+
+   To validate YAML or TOML, deserialize the documents yourself (for example with ``PyYAML``) and pass the resulting Python objects to the library, as described below.
 
 In practice what this means for JSON-like formats like YAML and TOML is that indeed one can generally schematize and then validate them exactly as if they were JSON by simply first deserializing them using libraries like ``PyYAML`` or the like, and passing the resulting Python objects into functions within this library.
 
